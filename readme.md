@@ -2,9 +2,9 @@
 
 ## Información del Estudiante
 
-- **Nombre:** [Tu nombre completo aquí]
-- **Carrera:** [Tu carrera]
-- **Fecha de inicio:** [Fecha]
+- **Nombre:** Chantal Morales 
+- **Carrera:** Ingeniería de Software
+- **Fecha de inicio:** 04/06/26
 
 ---
 
