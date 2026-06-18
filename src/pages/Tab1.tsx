@@ -1,13 +1,39 @@
-import { IonContent, IonHeader, IonList, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-import './Tab1.css';
-import RepoItem from '../components/RepoItem';
+import {
+  IonContent,
+  IonHeader,
+  IonList,
+  IonPage,
+  IonTitle,
+  IonToolbar,
+  useIonViewWillEnter,
+} from "@ionic/react";
+import "./Tab1.css";
+import RepoItem from "../components/RepoItem";
+import { useState } from "react";
+import { Repository } from "../interfaces/Repository";
+import { fetchRepositories } from "../services/GithubService";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const Tab1: React.FC = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+
+  const loadRepositories = async () => {
+    setIsLoading(true);
+    const reposData = await fetchRepositories();
+    setRepositories(reposData);
+    setIsLoading(false);
+  };
+
+  useIonViewWillEnter(() => {
+    loadRepositories();
+  });
+
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle >Repositorios</IonTitle>
+          <IonTitle>Repositorios</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
@@ -16,33 +42,20 @@ const Tab1: React.FC = () => {
             <IonTitle size="large">Repositorios</IonTitle>
           </IonToolbar>
         </IonHeader>
+        {!isLoading && repositories.length > 0 && (
+          <IonList>
+            {repositories.map((repository) => (
+              <RepoItem key={repository.id} {...repository} />
+            ))}
+          </IonList>
+        )}
+        <LoadingSpinner isOpen={isLoading} />
 
-        <IonList>
-          <RepoItem
-            name="Nombre del Repositorio 1"
-            description="Descripción breve del repositorio"
-            language="JavaScript"
-            avatarUrl="https://avatars.githubusercontent.com/u/1?v=4"
-          />
-          <RepoItem
-            name="Nombre del Repositorio 2"
-            description="Descripción breve del repositorio"
-            language="Python"
-            avatarUrl="https://avatars.githubusercontent.com/u/2?v=4"
-          />
-          <RepoItem
-            name="Nombre del Repositorio 3"
-            description="Descripción breve del repositorio"
-            language="Java"
-            avatarUrl="https://avatars.githubusercontent.com/u/3?v=4"
-          />
-          <RepoItem
-            name="Nombre del Repositorio 4"
-            description="Descripción breve del repositorio"
-            language="C#"
-            avatarUrl="https://avatars.githubusercontent.com/u/4?v=4"
-          />
-        </IonList>
+        {!isLoading && repositories.length === 0 && (
+          <div>
+            <p>No se encontraron repositorios.</p>
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );
