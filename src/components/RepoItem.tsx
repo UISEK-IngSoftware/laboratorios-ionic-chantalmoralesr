@@ -19,7 +19,7 @@ const RepoItem: React.FC<Repository> = (repository) => {
         <IonThumbnail slot="start">
           <img src={repository.owner.avatar_url} alt={repository.name} />
         </IonThumbnail>
-        <IonLabel>
+        <IonLabel className="repo-item-label">
           <h2>{repository.name}</h2>
           <p>{repository.description}</p>
           <p>Lenguaje: {repository.language}</p>

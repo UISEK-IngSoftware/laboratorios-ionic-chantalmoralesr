@@ -7,61 +7,46 @@ const GITHUB_API_URL =
   import.meta.env.VITE_GITHUB_API_URL || "https://api.github.com";
 const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
 
+const githubActions = axios.create({
+  baseURL: GITHUB_API_URL,
+  headers: {
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+  },
+});
+
 export const fetchRepositories = async (): Promise<Repository[]> => {
   try {
-    const response = await axios.get<Repository[]>(
-      `${GITHUB_API_URL}/user/repos`,
-      {
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-        },
-        params: {
-          per_page: 100,
-          sort: "created",
-          direction: "desc",
-          t: Date.now(),
-        },
+    const response = await githubActions.get<Repository[]>("/user/repos", {
+      params: {
+        per_page: 100,
+        sort: "created",
+        direction: "desc",
+        t: Date.now(),
       },
-    );
+    });
 
     return response.data as Repository[];
   } catch (error) {
-    console.error("Error fetching repositories:", error);
-    return [];
+    throw new Error("Error obteniendo repositorios: " + error);
   }
 };
 
-export const createRepository = async (repository: RepositoryPayload): Promise<Repository | null> => {
+export const createRepository = async (
+  repository: RepositoryPayload,
+): Promise<Repository | null> => {
   try {
-    const response = await axios.post(
-      `${GITHUB_API_URL}/user/repos`,
-      repository,
-      {
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-        },
-      },
-    );
+    const response = await githubActions.post("/user/repos", repository);
     return response.data as Repository;
   } catch (error) {
-    console.error("Error creating repository:", error);
-    return null;
+    throw new Error("Error creando repositorio: " + error);
   }
 };
 
 export const getUserInfo = async (): Promise<GithubUser | null> => {
   try {
-    const response = await axios.get(
-      `${GITHUB_API_URL}/user`,
-      {
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-        },
-      },
-    );
+    const response = await githubActions.get("/user");
     return response.data as GithubUser;
   } catch (error) {
-    console.error("Error al obtener la información del usuario:", error);
-    return null;
+    throw new Error("Error obteniendo la información del usuario: " + error);
   }
-}
+};

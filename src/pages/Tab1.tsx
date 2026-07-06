@@ -3,6 +3,7 @@ import {
   IonHeader,
   IonList,
   IonPage,
+  IonText,
   IonTitle,
   IonToolbar,
   useIonViewWillEnter,
@@ -17,12 +18,21 @@ import LoadingSpinner from "../components/LoadingSpinner";
 const Tab1: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   const loadRepositories = async () => {
     setIsLoading(true);
-    const reposData = await fetchRepositories();
-    setRepositories(reposData);
-    setIsLoading(false);
+    fetchRepositories()
+      .then((reposData) => {
+        setRepositories(reposData);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        setErrorMsg("Error obteniendo repositorios: " + error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   useIonViewWillEnter(() => {
@@ -50,12 +60,7 @@ const Tab1: React.FC = () => {
           </IonList>
         )}
         <LoadingSpinner isOpen={isLoading} />
-
-        {!isLoading && repositories.length === 0 && (
-          <div>
-            <p>No se encontraron repositorios.</p>
-          </div>
-        )}
+        {errorMsg !== "" && <IonText color="danger">{errorMsg}</IonText>}
       </IonContent>
     </IonPage>
   );
