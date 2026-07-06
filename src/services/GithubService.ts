@@ -42,6 +42,33 @@ export const createRepository = async (
   }
 };
 
+export const updateRepository = async (
+  owner: string,
+  repo: string,
+  repository: RepositoryPayload,
+): Promise<Repository | null> => {
+  try {
+    const response = await githubActions.patch(
+      `/repos/${owner}/${repo}`,
+      repository,
+    );
+    return response.data as Repository;
+  } catch (error) {
+    throw new Error("Error actualizando repositorio: " + error);
+  }
+};
+
+export const deleteRepository = async (
+  owner: string,
+  repo: string,
+): Promise<void> => {
+  try {
+    await githubActions.delete(`/repos/${owner}/${repo}`);
+  } catch (error) {
+    throw new Error("Error eliminando repositorio: " + error);
+  }
+};
+
 export const getUserInfo = async (): Promise<GithubUser | null> => {
   try {
     const response = await githubActions.get("/user");

@@ -1,4 +1,4 @@
-import { useHistory } from "react-router";
+import { useHistory, useLocation } from "react-router";
 import {
   IonButton,
   IonContent,
@@ -8,68 +8,102 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  useIonViewWillEnter,
 } from "@ionic/react";
 import "./Tab2.css";
 import { RepositoryPayload } from "../interfaces/RepositoryPayload";
-import { createRepository } from "../services/GithubService";
-import { useState } from "react";
+import { createRepository, updateRepository } from "../services/GithubService";
+import { useRef, useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Repository } from "../interfaces/Repository";
 
 const Tab2: React.FC = () => {
   const history = useHistory();
+  const location = useLocation<{ repository?: Repository }>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [editingRepo, setEditingRepo] = useState<Repository | null>(null);
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
 
-  const repoFormData: RepositoryPayload = {
-    name: "",
-    description: "",
-  };
+  // ubicación actual en un ref para leer siempre el estado de navegación más reciente 
+  const locationRef = useRef(location);
+  locationRef.current = location;
 
-  const setFormName = (value: string) => {
-    repoFormData.name = value;
-  };
-
-  const setFormDescription = (value: string) => {
-    repoFormData.description = value;
-  };
+  useIonViewWillEnter(() => {
+    const repository = locationRef.current.state?.repository;
+    if (repository) {
+      setEditingRepo(repository);
+      setName(repository.name);
+      setDescription(repository.description ?? "");
+    } else {
+      setEditingRepo(null);
+      setName("");
+      setDescription("");
+    }
+    setErrorMsg("");
+  });
 
   const saveRepository = async () => {
-    if (repoFormData.name.trim() === "") {
+    if (name.trim() === "") {
       setErrorMsg("El nombre del repositorio es requerido");
       return;
     }
+
+    const repoFormData: RepositoryPayload = {
+      name: name.trim(),
+      description: description,
+    };
+
     setIsLoading(true);
-    createRepository(repoFormData)
-      .then((newRepo) => {
-        if (newRepo) {
-          setFormName("");
-          setFormDescription("");
+
+    const request = editingRepo
+      ? updateRepository(editingRepo.owner.login, editingRepo.name, repoFormData)
+      : createRepository(repoFormData);
+
+    request
+      .then((repo) => {
+        if (repo) {
+          setName("");
+          setDescription("");
+          setEditingRepo(null);
           setErrorMsg("");
           history.push("/tab1");
         } else {
-          setErrorMsg("Error al crear el repositorio");
+          setErrorMsg(
+            editingRepo
+              ? "Error al actualizar el repositorio"
+              : "Error al crear el repositorio",
+          );
         }
       })
       .catch((error) => {
-        setIsLoading(false);
-        setErrorMsg("Error al crear el repositorio: " + error.message);
+        setErrorMsg(
+          (editingRepo
+            ? "Error al actualizar el repositorio: "
+            : "Error al crear el repositorio: ") + error.message,
+        );
       })
       .finally(() => {
         setIsLoading(false);
       });
   };
 
+  const pageTitle = editingRepo
+    ? "Editar Repositorio"
+    : "Formulario de Repositorio";
+
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Formulario de Repositorio</IonTitle>
+          <IonTitle>{pageTitle}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Formulario de Repositorio</IonTitle>
+            <IonTitle size="large">{pageTitle}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <div className="form-container">
@@ -78,16 +112,16 @@ const Tab2: React.FC = () => {
             labelPlacement="floating"
             className="form-field"
             placeholder="Ingrese el nombre del repositorio"
-            value={repoFormData.name}
-            onIonChange={(e) => setFormName(e.detail.value!)}
+            value={name}
+            onIonInput={(e) => setName(e.detail.value!)}
           />
           <IonInput
             label="Descripción"
             labelPlacement="floating"
             className="form-field"
             placeholder="Ingrese una descripción breve"
-            value={repoFormData.description}
-            onIonChange={(e) => setFormDescription(e.detail.value!)}
+            value={description}
+            onIonInput={(e) => setDescription(e.detail.value!)}
           />
 
           {errorMsg !== "" && <IonText color="danger">{errorMsg}</IonText>}
@@ -99,7 +133,7 @@ const Tab2: React.FC = () => {
             onClick={saveRepository}
             disabled={isLoading}
           >
-            Guardar Repositorio
+            {editingRepo ? "Actualizar Repositorio" : "Guardar Repositorio"}
           </IonButton>
         </div>
         <LoadingSpinner isOpen={isLoading} />
